@@ -1,2 +1,2 @@
 # pyx3p
-This script allow to open the .x3p file create by OpenGPS consortium in Python.
+This is an unofficial Python module that allows to open the .x3p file format create by OpenGPS consortium.
