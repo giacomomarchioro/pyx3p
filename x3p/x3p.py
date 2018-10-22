@@ -21,6 +21,7 @@ Issues not solved:
    - there are some problems with encoding e.g. accent, greekletters
 
 """
+__all__ = ['x3pfile']
 
 class x3pfile(object):
     """docstring for x3pfile."""

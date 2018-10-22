@@ -1,1 +1,1 @@
-from x3p import x3pfile
+from x3p import *

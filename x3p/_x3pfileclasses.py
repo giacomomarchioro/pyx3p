@@ -1,5 +1,5 @@
-
 from __future__ import print_function
+import numpy as np
 """
 This implements the elements of the xmltree using python classes and the xsd
 rules using conditional statements.
