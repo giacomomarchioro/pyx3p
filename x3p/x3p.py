@@ -56,7 +56,7 @@ class x3pfile(object):
         pass
 
 
-    def read(self, filepath):
+    def load(self, filepath):
         # The x3p file format is zipped.
         zfile = zipfile.ZipFile(filepath, 'r')
         # We read the md5 checksum from the file inside the .zip
