@@ -21,17 +21,20 @@ Issues not solved:
    - there are some problems with encoding e.g. accent, greekletters
 
 """
-__all__ = ['x3pfile']
+__all__ = ['X3PFile']
 
-class x3pfile(object):
+class X3PFile(object):
     """docstring for x3pfile."""
-    def __init__(self,):
+    def __init__(self, filepath=None):
         self.data = np.array([])
         self.record1 = _x3pfileclasses.Record1()
         self.record2 = _x3pfileclasses.Record2()
         self.record3 = _x3pfileclasses.Record3()
         self.record4 = _x3pfileclasses.Record4()
         self.VendorSpecificID = None
+        self.infos = {'Rotation': False, 'Record2': False}
+        if filepath is not None:
+            self.load(filepath)
 
     def convert_datatype(self, dtype):
         '''
@@ -125,6 +128,7 @@ class x3pfile(object):
             if ax.tag == 'Rotation':
                 # we construct the rotation matrix using the set rotation and
                 # the indexes taken from the element tag.
+                self.infos['Rotation'] = True
                 for elem in ax:
                     col, row = elem.tag[1:]
                     self.record1.axes.set_rotation(int(row),
@@ -138,7 +142,7 @@ class x3pfile(object):
 
         # Records2 is optional so we check if it's in the records list
         if 'Record2' in records:
-            # filed in record2 are unique we use a dict
+            # fileds in record2 are unique we use a dict
             xd = xml2dict(records['Record2'])
             # even though the whole record is not mandatory some value are
             self.record2.set_date(xd['Date'])
@@ -166,6 +170,7 @@ class x3pfile(object):
                 self.record3.matrixdimension.set_sizeZ(xd['SizeZ'])
 
             if elem.tag == 'DataLink':
+                self.record3.datalist = False
                 # This mean that we have a binary file
                 print('Found a binary file')
                 mask = np.ma.nomask
@@ -220,23 +225,34 @@ class x3pfile(object):
 
             if elem.tag == 'DataList':
                 print('Found a datalist')
-                self.record3.datalink = None
+                self.record3.datalink = False
                 datalist = []
+                # it could be reasonable to espect sizeZ to be the number of
+                # profiles
+                n_profiles = self.record3.matrixdimension.sizeZ
                 for value in elem:
                     if value.text is None:  # it means its an invalid entry
-                        nanarr = [np.nan]*self.record3.matrixdimension.sizeZ
+                    # actualy xsd:float has also a NaN value that could be used
+                        nanarr = [np.nan]*n_profiles
                         datalist.append(nanarr)
                     else:
-                        datalist.append(value.text.split(';'))
+                        values = value.text.split(';')
+                        datalist.append(values)
+                        if len(values) > n_profiles:
+                            n_profiles = len(values)
+
 
                 dtypes = self.record1.axes.get_axes_dataype()
                 if len(dtypes) == 1:
                     dtype = self.convert_datatype(dtypes.pop())
                     data = np.array(datalist, dtype=dtype)
                     self.data = data.T
+            # Record4 contains only one element
+            self.record4.checksumfile = records['Record4'][0].text
 
     def write(self, filepath):
-        # XML file creation
+        # XML file creation: > check if the element present (if not mandatory)
+        #                    > recreate the datastructure from the numpy arrays
         p = ET.Element('p:ISO5436_2')
         p.set("xmlns:p", "http://www.opengps.eu/2008/ISO5436_2")
         p.set("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance")
@@ -251,72 +267,86 @@ class x3pfile(object):
         CX = ET.SubElement(Axes, 'CX')
         AxisType = ET.SubElement(CX, 'AxisType')
         AxisType.text = self.record1.axes.CX.axistype
-        DataType = ET.SubElement(CX, 'DataType')
-        DataType.text = self.record1.axes.CX.datatype
-        Increment = ET.SubElement(CX, 'Increment')
-        Increment.text = str(self.record1.axes.CX.increment)
-        Offset = ET.SubElement(CX, 'Offset')
-        Offset.text = self.record1.axes.CX.offset
+        if self.record1.axes.CX.datatype is not None:
+            DataType = ET.SubElement(CX, 'DataType')
+            DataType.text = self.record1.axes.CX.datatype
+        if self.record1.axes.CX.increment is not None:
+            Increment = ET.SubElement(CX, 'Increment')
+            Increment.text = str(self.record1.axes.CX.increment)
+        if self.record1.axes.CX.offset is not None:
+            Offset = ET.SubElement(CX, 'Offset')
+            Offset.text = str(self.record1.axes.CX.offset)
         CY = ET.SubElement(Axes, 'CY')
         AxisType = ET.SubElement(CY, 'AxisType')
         AxisType.text = self.record1.axes.CY.axistype
-        DataType = ET.SubElement(CY, 'DataType')
-        DataType.text = self.record1.axes.CY.datatype
-        Increment = ET.SubElement(CY, 'Increment')
-        Increment.text = str(self.record1.axes.CY.increment)
-        Offset = ET.SubElement(CY, 'Offset')
-        Offset.text = self.record1.axes.CY.offset
+        if self.record1.axes.CY.datatype is not None:
+            DataType = ET.SubElement(CY, 'DataType')
+            DataType.text = self.record1.axes.CY.datatype
+        if self.record1.axes.CY.increment is not None:
+            Increment = ET.SubElement(CY, 'Increment')
+            Increment.text = str(self.record1.axes.CY.increment)
+        if self.record1.axes.CY.offset is not None:
+            Offset = ET.SubElement(CY, 'Offset')
+            Offset.text = str(self.record1.axes.CY.offset)
         CZ = ET.SubElement(Axes, 'CZ')
         AxisType = ET.SubElement(CZ, 'AxisType')
         AxisType.text = self.record1.axes.CZ.axistype
-        DataType = ET.SubElement(CZ, 'DataType')
-        DataType.text = self.record1.axes.CZ.datatype
-        Increment = ET.SubElement(CZ, 'Increment')
-        Increment.text = str(self.record1.axes.CZ.increment)
-        Offset = ET.SubElement(CZ, 'Offset')
-        Offset.text = self.record1.axes.CZ.offset
-        Rotation = ET.SubElement(Axes, 'Rotation')
-        r11 = ET.SubElement(Rotation, 'r11')
-        r11.text = self.record1.axes.get_rotation(1, 1, as_string=True)
-        r12 = ET.SubElement(Rotation, 'r12')
-        r12.text = self.record1.axes.get_rotation(1, 2, as_string=True)
-        r13 = ET.SubElement(Rotation, 'r13')
-        r13.text = self.record1.axes.get_rotation(1, 3, as_string=True)
-        r21 = ET.SubElement(Rotation, 'r21')
-        r21.text = self.record1.axes.get_rotation(2, 1, as_string=True)
-        r22 = ET.SubElement(Rotation, 'r22')
-        r22.text = self.record1.axes.get_rotation(2, 2, as_string=True)
-        r23 = ET.SubElement(Rotation, 'r23')
-        r23.text = self.record1.axes.get_rotation(2, 3, as_string=True)
-        r31 = ET.SubElement(Rotation, 'r31')
-        r31.text = self.record1.axes.get_rotation(3, 1, as_string=True)
-        r32 = ET.SubElement(Rotation, 'r32')
-        r32.text = self.record1.axes.get_rotation(3, 2, as_string=True)
-        r33 = ET.SubElement(Rotation, 'r33')
-        r33.text = self.record1.axes.get_rotation(3, 3, as_string=True)
-        Record2 = ET.SubElement(p, 'Record2')
-        Date = ET.SubElement(Record2, 'Date')
-        Date.text = self.record2.date
-        Creator = ET.SubElement(Record2, 'Creator')
-        Creator.text = self.record2.creator.decode('utf-8')
-        Instrument = ET.SubElement(Record2, 'Instrument')
-        Manufacturer = ET.SubElement(Instrument, 'Manufacturer')
-        Manufacturer.text = self.record2.instrument.manufacturer.decode('utf-8')
-        Model = ET.SubElement(Instrument, 'Model')
-        Model.text = self.record2.instrument.model.decode('utf-8')
-        Serial = ET.SubElement(Instrument, 'Serial')
-        Serial.text = self.record2.instrument.serial
-        Version = ET.SubElement(Instrument, 'Version')
-        Version.text = self.record2.instrument.version
-        CalibrationDate = ET.SubElement(Record2, 'CalibrationDate')
-        CalibrationDate.text = self.record2.calibrationdate
-        ProbingSystem = ET.SubElement(Record2, 'ProbingSystem')
-        Type = ET.SubElement(ProbingSystem, 'Type')
-        Type.text = self.record2.probingsystem.type
-        Identification = ET.SubElement(ProbingSystem, 'Identification')
-        Identification.text = self.record2.probingsystem.identification
-        Comment = ET.SubElement(Record2, 'Comment')
-        Comment.text = self.record2.comment
+        if self.record1.axes.CZ.datatype is not None:
+            DataType = ET.SubElement(CZ, 'DataType')
+            DataType.text = self.record1.axes.CZ.datatype
+        if self.record1.axes.CZ.increment is not None:
+            Increment = ET.SubElement(CZ, 'Increment')
+            Increment.text = str(self.record1.axes.CZ.increment)
+        if self.record1.axes.CZ.offset is not None:
+            Offset = ET.SubElement(CZ, 'Offset')
+            Offset.text = str(self.record1.axes.CZ.offset)
+        if self.infos['Rotation']:  # We chek if we have a rotation
+            Rotation = ET.SubElement(Axes, 'Rotation')
+            r11 = ET.SubElement(Rotation, 'r11')
+            r11.text = self.record1.axes.get_rotation(1, 1, as_string=True)
+            r12 = ET.SubElement(Rotation, 'r12')
+            r12.text = self.record1.axes.get_rotation(1, 2, as_string=True)
+            r13 = ET.SubElement(Rotation, 'r13')
+            r13.text = self.record1.axes.get_rotation(1, 3, as_string=True)
+            r21 = ET.SubElement(Rotation, 'r21')
+            r21.text = self.record1.axes.get_rotation(2, 1, as_string=True)
+            r22 = ET.SubElement(Rotation, 'r22')
+            r22.text = self.record1.axes.get_rotation(2, 2, as_string=True)
+            r23 = ET.SubElement(Rotation, 'r23')
+            r23.text = self.record1.axes.get_rotation(2, 3, as_string=True)
+            r31 = ET.SubElement(Rotation, 'r31')
+            r31.text = self.record1.axes.get_rotation(3, 1, as_string=True)
+            r32 = ET.SubElement(Rotation, 'r32')
+            r32.text = self.record1.axes.get_rotation(3, 2, as_string=True)
+            r33 = ET.SubElement(Rotation, 'r33')
+            r33.text = self.record1.axes.get_rotation(3, 3, as_string=True)
+        if self.record2 is not None:
+            Record2 = ET.SubElement(p, 'Record2')
+            Date = ET.SubElement(Record2, 'Date')
+            Date.text = self.record2.date
+            if self.record2.creator is not None:
+                Creator = ET.SubElement(Record2, 'Creator')
+                Creator.text = self.record2.creator.decode('utf-8')
+            Instrument = ET.SubElement(Record2, 'Instrument')
+            Manufacturer = ET.SubElement(Instrument, 'Manufacturer')
+            Manufacturer.text = \
+                self.record2.instrument.manufacturer.decode('utf-8')
+            Model = ET.SubElement(Instrument, 'Model')
+            Model.text = self.record2.instrument.model.decode('utf-8')
+            Serial = ET.SubElement(Instrument, 'Serial')
+            Serial.text = self.record2.instrument.serial
+            Version = ET.SubElement(Instrument, 'Version')
+            Version.text = self.record2.instrument.version
+            CalibrationDate = ET.SubElement(Record2, 'CalibrationDate')
+            CalibrationDate.text = self.record2.calibrationdate
+            ProbingSystem = ET.SubElement(Record2, 'ProbingSystem')
+            Type = ET.SubElement(ProbingSystem, 'Type')
+            Type.text = self.record2.probingsystem.type
+            Identification = ET.SubElement(ProbingSystem, 'Identification')
+            Identification.text = self.record2.probingsystem.identification
+            if self.record2.comment is not None:
+                Comment = ET.SubElement(Record2, 'Comment')
+                Comment.text = self.record2.comment
         Record3 = ET.SubElement(p, 'Record3')
         MatrixDimension = ET.SubElement(Record3, 'MatrixDimension')
         SizeX = ET.SubElement(MatrixDimension, 'SizeX')
@@ -325,28 +355,44 @@ class x3pfile(object):
         SizeY.text = str(self.record3.matrixdimension.sizeY)
         SizeZ = ET.SubElement(MatrixDimension, 'SizeZ')
         SizeZ.text = str(self.record3.matrixdimension.sizeZ)
-        if self.record3.datalink is not None:
+        if self.record3.datalink is not False:
             DataLink = ET.SubElement(Record3, 'DataLink')
             PointDataLink = ET.SubElement(DataLink, 'PointDataLink')
             PointDataLink.text = self.record3.datalink.PointDataLink
             MD5ChecksumPointData = ET.SubElement(DataLink,
                                                  'MD5ChecksumPointData')
-            MD5ChecksumPointData.text = self.record3.datalink.MD5ChecksumPointData
-            ValidPointsLink = ET.SubElement(DataLink, 'ValidPointsLink')
-            ValidPointsLink.text = self.record3.datalink.ValidPointsLink
-            MD5ChecksumValidPoints = ET.SubElement(DataLink,
-                                                   'MD5ChecksumValidPoints')
-            MD5ChecksumValidPoints.text = self.record3.datalink.MD5ChecksumValidPoints
+            MD5ChecksumPointData.text = \
+                self.record3.datalink.MD5ChecksumPointData
+            # Check if we have also the valid points link
+            if self.record3.datalink.ValidPointsLink is not None:
+                ValidPointsLink = ET.SubElement(DataLink, 'ValidPointsLink')
+                ValidPointsLink.text = self.record3.datalink.ValidPointsLink
+                MD5ChecksumValidPoint = ET.SubElement(DataLink,
+                                                      'MD5ChecksumValidPoints')
+                MD5ChecksumValidPoint.text = \
+                    self.record3.datalink.MD5ChecksumValidPoints
+        elif self.record3.datalist is not False:
+            DataList = ET.SubElement(Record3, 'DataList')
+            for values in self.data.T:
+                Datum = ET.SubElement(DataList, 'Datum')
+                if not all(np.isnan(values)):
+                    Datum.text = ";".join([str(i) for i in values])
+
         Record4 = ET.SubElement(p, 'Record4')
         ChecksumFile = ET.SubElement(Record4, 'ChecksumFile')
         ChecksumFile.text = self.record4.checksumfile
 
         # ET.dump(p)
-        mydata = ET.tostring(p, encoding='utf-8')
+        xml = ET.tostring(p, encoding='utf-8')
+        # MD5 Check sum
+        md5 = hashlib.md5(xml).hexdigest() + " *main.xml"
         # with open("main.xml", "w") as f:
         #    f.write(mydata
-        with zipfile.ZipFile(filepath, 'w') as zf:
-            zf.writestr("test\main.xml",mydata)
+        with zipfile.ZipFile("".join([filepath, '.x3p']), 'w') as zf:
+            zf.writestr("md5checksum.hex", md5)
+            zf.writestr("main.xml", xml)
+            if self.record3.datalink is not False:
+                zf.writestr("bindata/data.bin", self.data.data.tobytes())
         # We read the md5 checksum from the file inside the .zip
         # Note: there is also the *main.xml we use `.split` to eliminate it.
         # We use as convention to convert checksum to lower case letters.

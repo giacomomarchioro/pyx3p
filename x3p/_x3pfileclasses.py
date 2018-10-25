@@ -233,7 +233,7 @@ class Record2(object):
         """	Date of currently used calibrationIt must be xsd:dateTime"""
         # TODO: this should be implemented for checking that is the right
         # format
-        self.date = datetimeisostring
+        self.calibrationdate = datetimeisostring
 
     def set_creator(self, name):
         """Method for setting the name of the creator.
@@ -251,9 +251,9 @@ class Record2(object):
         """
         if str.isdigit(str(name.encode('utf8'))):
             # This doesn't work for float
-            print('Excpected a string with the creator name. Get:%s' % (name))
+            print('Excpected a string with the comment. Get:%s' % (name))
         else:
-            self.creator = name.encode('utf-8')
+            self.comment = name.encode('utf-8')
 
 # End of Record2 classes.
 
@@ -291,7 +291,7 @@ class DataLink(object):
 
     def set_MD5ChecksumPointData(self, checksum):
         """ """
-        self.MD5ChecksumValidPoints = checksum
+        self.MD5ChecksumPointData = checksum
 
     def set_ValidPointsLink(self, validpointslink):
 
