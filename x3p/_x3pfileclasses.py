@@ -114,8 +114,11 @@ class Axes(object):
         else:
             print("Value must be in range -1 to 1. Get: %s " % (value))
 
-    def get_rotation(self, row, col):
-        return self.rotation[row-1, col-1]
+    def get_rotation(self, row, col, as_string=False):
+        rot = self.rotation[row-1, col-1]
+        if as_string:
+            rot = str(rot)
+        return rot
 
     def set_no_rotation(self):
         self.rotation = np.fill_diagonal(self.rotation, 1)
@@ -166,21 +169,21 @@ class Instrument(object):
         '''
         Name of the equipment manufacturer
         '''
-        self.manufacturer = manufacturer
+        self.manufacturer = manufacturer.encode('utf-8')
 
-    def set_model(self,model):
+    def set_model(self, model):
         '''
         Name of the machine model used for the measurement
         '''
         self.model = model.encode('utf-8')
 
-    def set_serial(self,serial):
+    def set_serial(self, serial):
         '''
         Serial number of the machine.
         '''
         self.serial = serial
 
-    def set_version(self,version):
+    def set_version(self, version):
         '''
         Software and hardware version strings used to create this file.
         '''
@@ -240,7 +243,7 @@ class Record2(object):
             # This doesn't work for float
             print('Excpected a string with the creator name. Get:%s' % (name))
         else:
-            self.creator = name
+            self.creator = name.encode('utf-8')
 
 
     def set_comment(self, name):
@@ -250,7 +253,7 @@ class Record2(object):
             # This doesn't work for float
             print('Excpected a string with the creator name. Get:%s' % (name))
         else:
-            self.creator = name
+            self.creator = name.encode('utf-8')
 
 # End of Record2 classes.
 

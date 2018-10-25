@@ -167,6 +167,7 @@ class x3pfile(object):
 
             if elem.tag == 'DataLink':
                 # This mean that we have a binary file
+                print('Found a binary file')
                 mask = np.ma.nomask
                 for i in elem:
                     if i.tag == 'PointDataLink':
@@ -202,9 +203,23 @@ class x3pfile(object):
                                                            dtype=dtype
                                                            ).reshape(size)
 
+                    elif self.record3.matrixdimension.sizeZ > 1:
+                        size = (self.record3.matrixdimension.sizeX,
+                                self.record3.matrixdimension.sizeY,
+                                self.record3.matrixdimension.sizeZ)
+                        dtypes = self.record1.axes.get_axes_dataype()
+                        if len(dtypes) == 1:
+                            dtype = self.convert_datatype(dtypes.pop())
+                            data = np.frombuffer(binfile, dtype=dtype)
+                            self.data = np.ma.masked_array(data,
+                                                           mask=mask,
+                                                           dtype=dtype
+                                                           ).reshape(size)
+
             #np.ma.masked_array([(1,2,3),(3,4,5),(5,6,7)],dtype = [('x', 'i8'), ('y',   'f4'),('z','i8')])
 
             if elem.tag == 'DataList':
+                print('Found a datalist')
                 self.record3.datalink = None
                 datalist = []
                 for value in elem:
@@ -217,4 +232,124 @@ class x3pfile(object):
                 dtypes = self.record1.axes.get_axes_dataype()
                 if len(dtypes) == 1:
                     dtype = self.convert_datatype(dtypes.pop())
-                    self.data = np.array(datalist, dtype=dtype).T
+                    data = np.array(datalist, dtype=dtype)
+                    self.data = data.T
+
+    def write(self, filepath):
+        # XML file creation
+        p = ET.Element('p:ISO5436_2')
+        p.set("xmlns:p", "http://www.opengps.eu/2008/ISO5436_2")
+        p.set("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance")
+        p.set("xsi:schemaLocation",
+              "http://www.opengps.eu/2008/ISO5436_2 http://www.opengps.eu/2008/ISO5436_2/ISO5436_2.xsd")
+        Record1 = ET.SubElement(p, 'Record1')
+        Revision = ET.SubElement(Record1, 'Revision')
+        Revision.text = self.record1.revision
+        FeatureType = ET.SubElement(Record1, 'FeatureType')
+        FeatureType.text = self.record1.featuretype
+        Axes = ET.SubElement(Record1, 'Axes')
+        CX = ET.SubElement(Axes, 'CX')
+        AxisType = ET.SubElement(CX, 'AxisType')
+        AxisType.text = self.record1.axes.CX.axistype
+        DataType = ET.SubElement(CX, 'DataType')
+        DataType.text = self.record1.axes.CX.datatype
+        Increment = ET.SubElement(CX, 'Increment')
+        Increment.text = str(self.record1.axes.CX.increment)
+        Offset = ET.SubElement(CX, 'Offset')
+        Offset.text = self.record1.axes.CX.offset
+        CY = ET.SubElement(Axes, 'CY')
+        AxisType = ET.SubElement(CY, 'AxisType')
+        AxisType.text = self.record1.axes.CY.axistype
+        DataType = ET.SubElement(CY, 'DataType')
+        DataType.text = self.record1.axes.CY.datatype
+        Increment = ET.SubElement(CY, 'Increment')
+        Increment.text = str(self.record1.axes.CY.increment)
+        Offset = ET.SubElement(CY, 'Offset')
+        Offset.text = self.record1.axes.CY.offset
+        CZ = ET.SubElement(Axes, 'CZ')
+        AxisType = ET.SubElement(CZ, 'AxisType')
+        AxisType.text = self.record1.axes.CZ.axistype
+        DataType = ET.SubElement(CZ, 'DataType')
+        DataType.text = self.record1.axes.CZ.datatype
+        Increment = ET.SubElement(CZ, 'Increment')
+        Increment.text = str(self.record1.axes.CZ.increment)
+        Offset = ET.SubElement(CZ, 'Offset')
+        Offset.text = self.record1.axes.CZ.offset
+        Rotation = ET.SubElement(Axes, 'Rotation')
+        r11 = ET.SubElement(Rotation, 'r11')
+        r11.text = self.record1.axes.get_rotation(1, 1, as_string=True)
+        r12 = ET.SubElement(Rotation, 'r12')
+        r12.text = self.record1.axes.get_rotation(1, 2, as_string=True)
+        r13 = ET.SubElement(Rotation, 'r13')
+        r13.text = self.record1.axes.get_rotation(1, 3, as_string=True)
+        r21 = ET.SubElement(Rotation, 'r21')
+        r21.text = self.record1.axes.get_rotation(2, 1, as_string=True)
+        r22 = ET.SubElement(Rotation, 'r22')
+        r22.text = self.record1.axes.get_rotation(2, 2, as_string=True)
+        r23 = ET.SubElement(Rotation, 'r23')
+        r23.text = self.record1.axes.get_rotation(2, 3, as_string=True)
+        r31 = ET.SubElement(Rotation, 'r31')
+        r31.text = self.record1.axes.get_rotation(3, 1, as_string=True)
+        r32 = ET.SubElement(Rotation, 'r32')
+        r32.text = self.record1.axes.get_rotation(3, 2, as_string=True)
+        r33 = ET.SubElement(Rotation, 'r33')
+        r33.text = self.record1.axes.get_rotation(3, 3, as_string=True)
+        Record2 = ET.SubElement(p, 'Record2')
+        Date = ET.SubElement(Record2, 'Date')
+        Date.text = self.record2.date
+        Creator = ET.SubElement(Record2, 'Creator')
+        Creator.text = self.record2.creator.decode('utf-8')
+        Instrument = ET.SubElement(Record2, 'Instrument')
+        Manufacturer = ET.SubElement(Instrument, 'Manufacturer')
+        Manufacturer.text = self.record2.instrument.manufacturer.decode('utf-8')
+        Model = ET.SubElement(Instrument, 'Model')
+        Model.text = self.record2.instrument.model.decode('utf-8')
+        Serial = ET.SubElement(Instrument, 'Serial')
+        Serial.text = self.record2.instrument.serial
+        Version = ET.SubElement(Instrument, 'Version')
+        Version.text = self.record2.instrument.version
+        CalibrationDate = ET.SubElement(Record2, 'CalibrationDate')
+        CalibrationDate.text = self.record2.calibrationdate
+        ProbingSystem = ET.SubElement(Record2, 'ProbingSystem')
+        Type = ET.SubElement(ProbingSystem, 'Type')
+        Type.text = self.record2.probingsystem.type
+        Identification = ET.SubElement(ProbingSystem, 'Identification')
+        Identification.text = self.record2.probingsystem.identification
+        Comment = ET.SubElement(Record2, 'Comment')
+        Comment.text = self.record2.comment
+        Record3 = ET.SubElement(p, 'Record3')
+        MatrixDimension = ET.SubElement(Record3, 'MatrixDimension')
+        SizeX = ET.SubElement(MatrixDimension, 'SizeX')
+        SizeX.text = str(self.record3.matrixdimension.sizeX)
+        SizeY = ET.SubElement(MatrixDimension, 'SizeY')
+        SizeY.text = str(self.record3.matrixdimension.sizeY)
+        SizeZ = ET.SubElement(MatrixDimension, 'SizeZ')
+        SizeZ.text = str(self.record3.matrixdimension.sizeZ)
+        if self.record3.datalink is not None:
+            DataLink = ET.SubElement(Record3, 'DataLink')
+            PointDataLink = ET.SubElement(DataLink, 'PointDataLink')
+            PointDataLink.text = self.record3.datalink.PointDataLink
+            MD5ChecksumPointData = ET.SubElement(DataLink,
+                                                 'MD5ChecksumPointData')
+            MD5ChecksumPointData.text = self.record3.datalink.MD5ChecksumPointData
+            ValidPointsLink = ET.SubElement(DataLink, 'ValidPointsLink')
+            ValidPointsLink.text = self.record3.datalink.ValidPointsLink
+            MD5ChecksumValidPoints = ET.SubElement(DataLink,
+                                                   'MD5ChecksumValidPoints')
+            MD5ChecksumValidPoints.text = self.record3.datalink.MD5ChecksumValidPoints
+        Record4 = ET.SubElement(p, 'Record4')
+        ChecksumFile = ET.SubElement(Record4, 'ChecksumFile')
+        ChecksumFile.text = self.record4.checksumfile
+
+        # ET.dump(p)
+        mydata = ET.tostring(p, encoding='utf-8')
+        # with open("main.xml", "w") as f:
+        #    f.write(mydata
+        with zipfile.ZipFile(filepath, 'w') as zf:
+            zf.writestr("test\main.xml",mydata)
+        # We read the md5 checksum from the file inside the .zip
+        # Note: there is also the *main.xml we use `.split` to eliminate it.
+        # We use as convention to convert checksum to lower case letters.
+        #checksum = zfile.read('md5checksum.hex').split(' ')[0].lower()
+        # We now calculate the checksum from the main.xml.
+        #checksum_calc = hashlib.md5(zfile.read('main.xml')).hexdigest().lower()
