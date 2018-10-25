@@ -12,7 +12,7 @@ x3pfile.record1.revison).
 Few execptions have been made to this rule: when there is a data structure that
 is clearly easier to describe using an array, a numpy array is used.
 This happens:
-    - for the rotation matrix there are no r11,r12 etc. etc. param but a 3 x 3
+    - for the rotation matrix there are no r11,r12 etc. etc. params but a 3 x 3
       numpy matrix (r11 at index 0,0)
     - in case there is a profile encoded in the xml file ( a DataList).
     -
@@ -56,7 +56,15 @@ class X3PFile(object):
         URL of the vendor. It does not need to be valid but it must be
         worldwide unique!Example: http://www.example-inc.com/myformat
         '''
-        pass
+        raise NotImplementedError
+
+    def infer_metadata(self, override=False, verbose=True):
+        '''
+        This function try to fill the metadata from the numpy array describing
+        the surface.
+        '''
+        raise NotImplementedError
+        self.data.shape
 
 
     def load(self, filepath):
@@ -393,9 +401,3 @@ class X3PFile(object):
             zf.writestr("main.xml", xml)
             if self.record3.datalink is not False:
                 zf.writestr("bindata/data.bin", self.data.data.tobytes())
-        # We read the md5 checksum from the file inside the .zip
-        # Note: there is also the *main.xml we use `.split` to eliminate it.
-        # We use as convention to convert checksum to lower case letters.
-        #checksum = zfile.read('md5checksum.hex').split(' ')[0].lower()
-        # We now calculate the checksum from the main.xml.
-        #checksum_calc = hashlib.md5(zfile.read('main.xml')).hexdigest().lower()
