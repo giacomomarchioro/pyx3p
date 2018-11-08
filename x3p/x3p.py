@@ -389,13 +389,11 @@ class X3PFile(object):
         Record4 = ET.SubElement(p, 'Record4')
         ChecksumFile = ET.SubElement(Record4, 'ChecksumFile')
         ChecksumFile.text = self.record4.checksumfile
-
-        # ET.dump(p)
+        #
         xml = ET.tostring(p, encoding='utf-8')
         # MD5 Check sum
         md5 = hashlib.md5(xml).hexdigest() + " *main.xml"
-        # with open("main.xml", "w") as f:
-        #    f.write(mydata
+        # WRITING INTO THE ZIP FILE ALL THE DATA
         with zipfile.ZipFile("".join([filepath, '.x3p']), 'w') as zf:
             zf.writestr("md5checksum.hex", md5)
             zf.writestr("main.xml", xml)
