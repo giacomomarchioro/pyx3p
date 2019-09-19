@@ -2,7 +2,7 @@
 This is an unofficial Python module that allows to open the .x3p file format create by OpenGPS consortium.
 
 ## How it's structured
-This module is an implementation of the .x3p format datastructure using the dot
+This module is an implementation of the X3P format datastructure using the dot
 notation. The xml structure of the .x3p is almost always mantained and made
 accessible using the dot notation. For instance, for accessing the revision field, first we create an instance of X3Pfile class (e.g. `anx3pfile`) then we can use
 anx3pfile.record1.revison.
