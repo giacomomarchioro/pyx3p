@@ -1,4 +1,6 @@
 # pyx3p
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fgiacomomarchioro%2Fpyx3p.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fgiacomomarchioro%2Fpyx3p?ref=badge_shield)
+
 This is an unofficial Python module that allows to open the .x3p file format create by OpenGPS consortium.
 
 ## How it's structured
@@ -63,3 +65,7 @@ anx3pfile.data
 ```
 
 
+
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fgiacomomarchioro%2Fpyx3p.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fgiacomomarchioro%2Fpyx3p?ref=badge_large)
