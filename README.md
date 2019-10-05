@@ -1,5 +1,5 @@
 # pyx3p
-This is an unofficial Python module that allows to open the .x3p file format create by OpenGPS consortium.
+This is an unofficial Python module that allows to open the .x3p file format created by (OpenGPS consortium)[http://open-gps.sourceforge.net/].
 
 ## How it's structured
 This module is an implementation of the X3P format datastructure using the dot
