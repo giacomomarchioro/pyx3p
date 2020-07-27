@@ -1,10 +1,11 @@
 from __future__ import print_function
 import numpy as np
+from datetime import datetime
+import warnings
 """
 This implements the elements of the xmltree using python classes and the xsd
 rules using conditional statements.
 """
-
 class Ax(object):
     """docstring for axes. Here we have an additional axisname attribute, not
     present in the original implementation, for checking that if the axistype
@@ -223,17 +224,22 @@ class Record2(object):
         self.probingsystem = ProbingSystem()
         self.comment = None
 
+    def _check_datetime(self,datetime_str,url=None):
+        if datetime_str is not None:
+            try:
+                datetime.strptime(datetime_str,'%Y-%m-%dT%H:%M:%S')
+            except ValueError:
+                msg = ('The date must be in the following format es. 2020-6-14T18:30:29\n')
+                warnings.warn(msg + "\n it was: %s"%datetime_str,stacklevel=3)
+        return datetime_str
+
     def set_date(self, datetimeisostring,):
         """Date and time of file creation.It must be xsd:dateTime"""
-        # TODO: this should be implemented for checking that is the right
-        # format
-        self.date = datetimeisostring
+        self.date = self._check_datetime(datetimeisostring)
 
     def set_calibrationdate(self, datetimeisostring,):
         """	Date of currently used calibrationIt must be xsd:dateTime"""
-        # TODO: this should be implemented for checking that is the right
-        # format
-        self.calibrationdate = datetimeisostring
+        self.calibrationdate = self._check_datetime(datetimeisostring)
 
     def set_creator(self, name):
         """Method for setting the name of the creator.

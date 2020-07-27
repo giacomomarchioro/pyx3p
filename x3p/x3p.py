@@ -3,7 +3,15 @@ import zipfile
 import hashlib
 import xml.etree.ElementTree as ET
 import numpy as np
-import _x3pfileclasses
+from . import _x3pfileclasses
+import warnings
+import logging
+try:
+    # python2
+    from urlparse import urlparse
+except ModuleNotFoundError:
+    # python3
+    from urllib.parse import urlparse
 """
 This module is an implementation of the .x3p format datastructure using the dot
 notation. The xml structure of the .x3p is almost always mantained and made
@@ -21,9 +29,9 @@ Issues not solved:
    - there are some problems with encoding e.g. accent, greekletters
 
 """
-__all__ = ['X3PFile']
+__all__ = ['X3Pfile']
 
-class X3PFile(object):
+class X3Pfile(object):
     """docstring for x3pfile."""
     def __init__(self, filepath=None):
         self.data = np.array([])
@@ -33,6 +41,8 @@ class X3PFile(object):
         self.record4 = _x3pfileclasses.Record4()
         self.VendorSpecificID = None
         self.infos = {'Rotation': False, 'Record2': False}
+        self.warnings = warnings
+        self.logging = logging
         if filepath is not None:
             self.load(filepath)
 
@@ -56,7 +66,11 @@ class X3PFile(object):
         URL of the vendor. It does not need to be valid but it must be
         worldwide unique!Example: http://www.example-inc.com/myformat
         '''
-        raise NotImplementedError
+        result = urlparse(url)
+        if not all([result.scheme, result.netloc, result.path]):
+            raise ValueError("%s does not appear as a valid url." %url)
+        else:
+            self.VendorSpecificID = url
 
     def infer_metadata(self, override=False, verbose=True):
         '''
@@ -65,7 +79,6 @@ class X3PFile(object):
         '''
         raise NotImplementedError
         self.data.shape
-
 
     def load(self, filepath):
         # The x3p file format is zipped.
