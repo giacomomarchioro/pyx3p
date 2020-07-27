@@ -86,9 +86,11 @@ class X3Pfile(object):
         # We read the md5 checksum from the file inside the .zip
         # Note: there is also the *main.xml we use `.split` to eliminate it.
         # We use as convention to convert checksum to lower case letters.
-        checksum = zfile.read('md5checksum.hex').split(' ')[0].lower()
+        checksum_line = zfile.read('md5checksum.hex').decode('utf8')
+        checksum = checksum_line.split(' ')[0].lower()
         # We now calculate the checksum from the main.xml.
-        checksum_calc = hashlib.md5(zfile.read('main.xml')).hexdigest().lower()
+        checksum_calc_line = zfile.read('main.xml').decode('utf8')
+        checksum_calc = hashlib.md5(checksum_calc_line).hexdigest().lower()
         if checksum != checksum_calc:
             print("WARNING: checksum doesn't match!")
         tree = ET.parse(zfile.open('main.xml'))
