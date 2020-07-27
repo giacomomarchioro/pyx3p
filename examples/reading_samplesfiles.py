@@ -1,7 +1,8 @@
 import os 
 from x3p import X3Pfile
 import matplotlib.pyplot as plt
-
+# visit : https://sourceforge.net/projects/open-gps/files/Sample-Files/
+# substitute this path with the path were the samples file have been downoladed
 samplesfiles_path = r'/Users/giacomo/Desktop/20110630_X3PSampleFiles_NanoFocus/'
 files = [i for i in os.listdir(samplesfiles_path) if i.endswith('.x3p')]
 x3pobjs = dict()

@@ -72,13 +72,41 @@ class X3Pfile(object):
         else:
             self.VendorSpecificID = url
 
-    def infer_metadata(self, override=False, verbose=True):
+    def set_data(self,array):
         '''
         This function try to fill the metadata from the numpy array describing
         the surface.
         '''
-        raise NotImplementedError
-        self.data.shape
+        datatypes = {"int16":"I",
+        "int32":"L", 
+        "float32":"F",
+        "float64":"D",
+        }
+        dtype = datatypes[str(array.dtype)]
+        self.record1.axes.CX.set_datatype(dtype)
+        self.record1.axes.CY.set_datatype(dtype)
+        self.record1.axes.CZ.set_datatype(dtype)
+        if self.record1.featuretype == 'SUR':
+            md5_bin = hashlib.md5(array.data).hexdigest()
+            self.record3.datalink.set_PointDataLink("bindata/data.bin")
+            self.record3.datalink.set_MD5ChecksumPointData(md5_bin)
+            if hasattr(array,'mask'):
+                if array.mask is not False:
+                    print('inserting')
+                    md5_binm = hashlib.md5(~array.mask).hexdigest()
+                    self.record3.datalink.set_ValidPointsLink("bindata/valids.bin")
+                    self.record3.datalink.set_MD5ChecksumValidPoints(md5_binm)
+            #self.data.data.tobytes()
+            if len(array.shape) == 2:
+                self.record3.matrixdimension.set_sizeX(array.shape[0])
+                self.record3.matrixdimension.set_sizeY(array.shape[1])
+                self.record3.matrixdimension.set_sizeZ(1)
+            if len(array.shape) > 2: 
+                self.record3.matrixdimension.set_sizeX(array.shape[1])
+                self.record3.matrixdimension.set_sizeY(array.shape[2])
+                self.record3.matrixdimension.set_sizeZ(array.shape[0])
+        else:
+            raise NotImplementedError("Only SUR is supported by current version.")
 
     def load(self, filepath):
         # The x3p file format is zipped.
@@ -211,6 +239,7 @@ class X3Pfile(object):
                     if i.tag == 'ValidPointsLink':
                         self.record3.datalink.set_ValidPointsLink(i.text)
                         validpoints = zfile.read(i.text)
+                        mask = [0 if b == 1 else 1 for b in validpoints]
 
                     if i.tag == 'MD5ChecksumValidPoints':
                         self.record3.datalink.set_MD5ChecksumValidPoints(i.text)
@@ -399,7 +428,7 @@ class X3Pfile(object):
             Identification.text = self.record2.probingsystem.identification
             if self.record2.comment is not None:
                 Comment = ET.SubElement(Record2, 'Comment')
-                Comment.text = self.record2.comment
+                Comment.text = self.record2.comment.decode('utf-8')
         Record3 = ET.SubElement(p, 'Record3')
         MatrixDimension = ET.SubElement(Record3, 'MatrixDimension')
         SizeX = ET.SubElement(MatrixDimension, 'SizeX')
@@ -439,8 +468,13 @@ class X3Pfile(object):
         # MD5 Check sum
         md5 = hashlib.md5(xml).hexdigest() + " *main.xml"
         # WRITING INTO THE ZIP FILE ALL THE DATA
-        with zipfile.ZipFile("".join([filepath, '.x3p']), 'w') as zf:
+        if not filepath.endswith('.x3p'):
+            filepath = "".join([filepath, '.x3p'])
+        with zipfile.ZipFile(filepath, 'w') as zf:
             zf.writestr("md5checksum.hex", md5)
             zf.writestr("main.xml", xml)
             if self.record3.datalink is not False:
                 zf.writestr("bindata/data.bin", self.data.data.tobytes())
+            if self.record3.datalink.ValidPointsLink is not None:
+                valids = ~self.data.mask
+                zf.writestr("bindata/valids.bin", valids.tobytes())

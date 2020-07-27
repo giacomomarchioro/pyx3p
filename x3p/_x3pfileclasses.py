@@ -16,6 +16,9 @@ class Ax(object):
         self.increment = None
         self.offset = None
         self.axisname = name
+        if name == 'CZ':
+            self.axistype = "A"
+            self.increment = 1
 
     def set_axistype(self, axistype):
         """
@@ -27,6 +30,9 @@ class Ax(object):
                 self.axistype = 'A'
                 print("The z-axis is set absolute by defult")
             else:
+                if axistype == "A" and self.increment != None:
+                    self.increment = 1
+                    print("Increment set to 1 by defult.")
                 self.axistype = axistype
         else:
             print("Axistype must be incremental (I) or absolute (A) get:")
@@ -50,6 +56,8 @@ class Ax(object):
         coordinate: Xreal = Xoffset + Xinteger*XIncrement.
         The unit of increment and offset is metre.
         """
+        if self.axistype == "A" and float(increment) != 1:
+            raise ValueError("Cannot set increment different from one to absolute axis.")
         self.increment = float(increment)
 
     def set_offset(self, offset):
@@ -285,6 +293,12 @@ class MatrixDimension(object):
 
     def set_sizeZ(self, value):
         self.sizeZ = int(value)
+    
+    def set_sizeXYZ(self,xyz):
+        self.sizeX = int(xyz[0])
+        self.sizeY = int(xyz[1])
+        self.sizeZ = int(xyz[2])
+
 
 class DataLink(object):
     """docstring for DataLink."""
@@ -314,7 +328,7 @@ class DataLink(object):
 
 
 class Record3(object):
-    """docstring for Record4"""
+    """docstring for Record3"""
     def __init__(self):
         self.matrixdimension = MatrixDimension()
         self.datalink = DataLink()
