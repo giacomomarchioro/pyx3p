@@ -89,8 +89,8 @@ class X3Pfile(object):
         checksum_line = zfile.read('md5checksum.hex').decode('utf8')
         checksum = checksum_line.split(' ')[0].lower()
         # We now calculate the checksum from the main.xml.
-        checksum_calc_line = zfile.read('main.xml').decode('utf8')
-        checksum_calc = hashlib.md5(checksum_calc_line).hexdigest().lower()
+        checksum_calc_xml = zfile.read('main.xml')
+        checksum_calc = hashlib.md5(checksum_calc_xml).hexdigest().lower()
         if checksum != checksum_calc:
             print("WARNING: checksum doesn't match!")
         tree = ET.parse(zfile.open('main.xml'))
