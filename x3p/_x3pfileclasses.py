@@ -131,6 +131,12 @@ class Axes(object):
         is returned (e.g. np.float32).
         '''
         return {self.CX.datatype, self.CY.datatype, self.CZ.datatype}
+    
+    def get_XYaxes_types(self):
+        '''
+        Return a tuple with the X and Y axis types (Y is absolute by default).
+        '''
+        return [self.CX.axistype, self.CY.axistype]
 
 
 class Record1(object):
@@ -321,7 +327,7 @@ class Record3(object):
     per pixel) X is fastest index, Y is slower,
     Z is slowest:
     (x1,y1),(x2,y1),(x3,y1),(x4,y1),(x1,y2)..."""
-        pass
+        raise NotImplementedError
 
     def set_listdimension(self, dimension):
         """A list does specify an unordered data set

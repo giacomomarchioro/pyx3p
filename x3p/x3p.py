@@ -218,31 +218,61 @@ class X3Pfile(object):
                         checksum_calc = hashlib.md5(validpoints).hexdigest()
                         if checksum_calc.lower() != i.text.lower():
                             print("Checksums valid bin data are different!")
+                    axest = self.record1.axes.get_XYaxes_types()
+                    # if we have incremental axis 
+                    if axest == ['I','I']:
+                        if self.record3.matrixdimension.sizeZ == 1:
+                            size = (self.record3.matrixdimension.sizeX,
+                                    self.record3.matrixdimension.sizeY)
+                            dtypes = self.record1.axes.get_axes_dataype()
+                            if len(dtypes) == 1:
+                                dtype = self.convert_datatype(dtypes.pop())
+                                data = np.frombuffer(binfile, dtype=dtype)
+                                self.data = np.ma.masked_array(data,
+                                                            mask=mask,
+                                                            dtype=dtype
+                                                            ).reshape(size)
+                            else:
+                                msg = "Multipe datatypes not implemented"
+                                raise NotImplementedError(msg)
 
-                    if self.record3.matrixdimension.sizeZ == 1:
-                        size = (self.record3.matrixdimension.sizeX,
-                                self.record3.matrixdimension.sizeY)
-                        dtypes = self.record1.axes.get_axes_dataype()
-                        if len(dtypes) == 1:
-                            dtype = self.convert_datatype(dtypes.pop())
-                            data = np.frombuffer(binfile, dtype=dtype)
-                            self.data = np.ma.masked_array(data,
-                                                           mask=mask,
-                                                           dtype=dtype
-                                                           ).reshape(size)
+                        elif self.record3.matrixdimension.sizeZ > 1:
+                            # This is the case of multiple layers
+                            size = (self.record3.matrixdimension.sizeZ,
+                                    self.record3.matrixdimension.sizeX,
+                                    self.record3.matrixdimension.sizeY,
+                                    )
+                            dtypes = self.record1.axes.get_axes_dataype()
+                            if len(dtypes) == 1:
+                                dtype = self.convert_datatype(dtypes.pop())
+                                data = np.frombuffer(binfile, dtype=dtype)
+                                self.data = np.ma.masked_array(data,
+                                                            mask=mask,
+                                                            dtype=dtype
+                                                            ).reshape(size)
+                            else:
+                                msg = "Multipe datatypes not implemented"
+                                raise NotImplementedError(msg)
 
-                    elif self.record3.matrixdimension.sizeZ > 1:
-                        size = (self.record3.matrixdimension.sizeX,
-                                self.record3.matrixdimension.sizeY,
-                                self.record3.matrixdimension.sizeZ)
-                        dtypes = self.record1.axes.get_axes_dataype()
-                        if len(dtypes) == 1:
-                            dtype = self.convert_datatype(dtypes.pop())
-                            data = np.frombuffer(binfile, dtype=dtype)
-                            self.data = np.ma.masked_array(data,
-                                                           mask=mask,
-                                                           dtype=dtype
-                                                           ).reshape(size)
+                    # for absolute axes the shape contains also the coordinates
+                    elif axest == ['A','A']:
+                        if self.record3.matrixdimension.sizeZ == 1:
+                            size = (self.record3.matrixdimension.sizeX,
+                                    self.record3.matrixdimension.sizeY,
+                                    3) # Z is set to 3 becuase it contains also the x,y coordinates
+                            dtypes = self.record1.axes.get_axes_dataype()
+                            if len(dtypes) == 1:
+                                dtype = self.convert_datatype(dtypes.pop())
+                                data = np.frombuffer(binfile, dtype=dtype)
+                                self.data = np.ma.masked_array(data,
+                                                            mask=mask,
+                                                            dtype=dtype
+                                                            ).reshape(size)
+                            else:
+                                msg = "Multipe datatypes not implemented"
+                                raise NotImplementedError(msg)
+                    else:
+                        raise NotImplementedError("Incremental and absolute axes togehter are not implemented.")
 
             #np.ma.masked_array([(1,2,3),(3,4,5),(5,6,7)],dtype = [('x', 'i8'), ('y',   'f4'),('z','i8')])
 
@@ -250,7 +280,7 @@ class X3Pfile(object):
                 print('Found a datalist')
                 self.record3.datalink = False
                 datalist = []
-                # it could be reasonable to espect sizeZ to be the number of
+                # it could be reasonable to expect sizeZ to be the number of
                 # profiles
                 n_profiles = self.record3.matrixdimension.sizeZ
                 for value in elem:
