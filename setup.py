@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="x3p",
-    version="0.0.5",
+    version="0.0.6",
     author="Giacomo Marchioro",
     author_email="giacomomarchioro@outlook.com",
     description="Unofficial Python module that allows opening the .x3p file format created by OpenGPS consortium",
