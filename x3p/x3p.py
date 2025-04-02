@@ -78,10 +78,13 @@ class X3Pfile(object):
         the surface.
         '''
         datatypes = {"int16":"I",
-        "int32":"L", 
+        "int32":"L",
         "float32":"F",
         "float64":"D",
         }
+        if self.record1.featuretype is None:
+            raise ValueError("Featuretype must be set before data. Use record1.set_featuretype('SUR')")
+        self.data = array
         dtype = datatypes[str(array.dtype)]
         self.record1.axes.CX.set_datatype(dtype)
         self.record1.axes.CY.set_datatype(dtype)
@@ -101,7 +104,7 @@ class X3Pfile(object):
                 self.record3.matrixdimension.set_sizeX(array.shape[0])
                 self.record3.matrixdimension.set_sizeY(array.shape[1])
                 self.record3.matrixdimension.set_sizeZ(1)
-            if len(array.shape) > 2: 
+            if len(array.shape) > 2:
                 self.record3.matrixdimension.set_sizeX(array.shape[1])
                 self.record3.matrixdimension.set_sizeY(array.shape[2])
                 self.record3.matrixdimension.set_sizeZ(array.shape[0])

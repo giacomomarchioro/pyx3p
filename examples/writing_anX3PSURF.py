@@ -3,7 +3,7 @@ import numpy as np
 import hashlib 
 # We create an empty data structure
 anx3pfile = X3Pfile()
-anx3pfile.set_VendorSpecificID =  "https://github.com/giacomomarchioro/pyx3p"
+anx3pfile.set_VendorSpecificID("https://github.com/giacomomarchioro/pyx3p")
 # Record 1
 anx3pfile.record1.set_featuretype('SUR')
 
@@ -33,9 +33,11 @@ anx3pfile.record2.set_comment("Example of scan.")
 
 # we generate a 2D array of distances with a sine pattern as sample data
 sin2d = np.vstack([np.sin(np.arange(-12.0, 12.0, 1))]*12)/1000**2 # microns
-mask = np.zeros(sin2d.shape)
-# we mask the forth, fifth and sixth row
-mask[[3,4,5],:] = 1
+# Create boolean mask array
+mask = np.zeros(sin2d.shape, dtype=bool)  # Important: specify dtype=bool
+# we mask the forth, fifth and sixth row (True values will be masked)
+mask[[3,4,5],:] = True
+# Create masked array with the boolean mask
 data = np.ma.masked_array(sin2d, mask=mask)
 anx3pfile.set_data(data)
 anx3pfile.write('mytest2')

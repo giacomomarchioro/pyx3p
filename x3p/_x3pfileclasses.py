@@ -75,7 +75,7 @@ class Ax(object):
            D -> np.float64
         """
         if dt is None:
-            dt == self.datatype
+            dt = self.datatype
         datatypes = {"I": np.int16,
                      "L": np.int32,
                      "F": np.float32,
